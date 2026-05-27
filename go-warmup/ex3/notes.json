@@ -1,0 +1,17 @@
+[
+    {
+        "title": "Yves",
+        "content": "Notes pour la physique",
+        "tags" : ["ex3", "go", "count", "count", "count", "count"]
+    },
+    {
+        "title": "Martin",
+        "content": "contenu de la notes pour les maths",
+        "tags" : ["ex3", "go", "count", "maths"]
+    },
+    {
+        "title": "Notes de George",
+        "content": "Juste pour noter",
+        "tags" : ["maths", "physique"]
+    }
+]
