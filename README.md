@@ -28,26 +28,7 @@ go test ./...
 
 Petits exercices d'échauffement Go : types de base, tri de tags, lecture/écriture JSON, interface de stockage de notes en mémoire.
 
-```sh
-cd go-warmup
-go run ./hello <votre prénom>
-go run ./ex1
-go run ./ex2
-go run ./ex3
-go run ./ex4-5
-go test ./ex4-5
-```
 
 ## tp-goroutines/ — TP concurrence
 
 Exercices sur les goroutines : exécution séquentielle vs concurrente, `sync.WaitGroup`, `channel`, pattern worker pool, `sync.Mutex` pour protéger un accès concurrent.
-
-```sh
-cd tp-goroutines
-go run ./ex1
-go run ./ex2
-go run ./ex3
-go run ./ex4
-go run ./ex5
-go run ./ex6
-```
