@@ -30,6 +30,20 @@ go run ./cmd/api
 ADDR=:9000 go run ./cmd/api
 ```
 
+Configuration via un fichier `.env` à la racine (voir `.env.example`) :
+
+```
+ADDR=:8080
+SEED=true
+```
+
+Les variables d'environnement déjà définies dans le shell ont priorité sur le `.env`.
+
+### Données de démonstration (seed)
+
+Au démarrage, l'API insère automatiquement 3 notes de démonstration en mémoire (voir `internal/store/seed.go`).
+Pour désactiver ce comportement, passer `SEED=false` (dans `.env` ou en variable d'environnement).
+
 ### Routes
 
 | Méthode | Chemin                   | Description                     |
@@ -41,6 +55,7 @@ ADDR=:9000 go run ./cmd/api
 | DELETE  | `/api/v1/notes/{id}`     | Supprimer                       |
 | GET     | `/api/v1/search?q=...`   | Recherche texte (titre+contenu) |
 | GET     | `/docs/openapi.yaml`     | Schéma OpenAPI 3.1              |
+| GET     | `/docs/`                 | Swagger UI (interface de test)  |
 
 ### Pagination
 
@@ -154,15 +169,18 @@ go test ./...
 mira/
 ├── cmd/api/            # point d'entrée du serveur HTTP
 ├── internal/
+│   ├── config/         # chargeur .env minimal
 │   ├── core/           # modèle métier (Note, inputs, validation)
-│   ├── store/          # interface Store + implémentation mémoire
+│   ├── store/          # interface Store + implémentation mémoire + seed
 │   └── http/
 │       ├── handlers/   # handlers HTTP + tests
 │       ├── middleware/ # requestID, logging slog, recovery, timeout
 │       ├── response/   # enveloppe JSON stable
 │       └── router.go   # montage des routes
 ├── docs/
-│   └── openapi.yaml    # schéma OpenAPI 3.1
+│   ├── openapi.yaml    # schéma OpenAPI 3.1
+│   └── index.html      # Swagger UI (servi sur /docs/)
+├── .env.example        # variables disponibles (ADDR, SEED)
 └── internal/
     ├── notes/          # CLI : store JSONL
     └── search/         # CLI : recherche texte

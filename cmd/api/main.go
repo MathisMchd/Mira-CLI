@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"mira/internal/config"
 	apihttp "mira/internal/http"
 	"mira/internal/store"
 )
@@ -20,12 +21,26 @@ func main() {
 		Level: slog.LevelInfo,
 	}))
 
+	if err := config.LoadDotEnv(".env"); err != nil {
+		logger.Error("échec de lecture du .env", "error", err)
+		os.Exit(1)
+	}
+
 	addr := os.Getenv("ADDR")
 	if addr == "" {
 		addr = ":8080"
 	}
 
 	s := store.NewMemory()
+
+	if os.Getenv("SEED") != "false" {
+		if err := store.Seed(s); err != nil {
+			logger.Error("échec du seed de démonstration", "error", err)
+			os.Exit(1)
+		}
+		logger.Info("données de démonstration insérées")
+	}
+
 	handler := apihttp.NewRouter(s, logger)
 
 	ln, err := net.Listen("tcp", addr)
