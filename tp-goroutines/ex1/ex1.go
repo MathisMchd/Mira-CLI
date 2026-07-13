@@ -24,10 +24,6 @@ func main() {
 	go afficherLettres()
 	afficherChiffres()
 
-	// On laisse le temps à la goroutine afficherLettres() de terminer
-	// avant que le programme principal ne se termine.
-	time.Sleep(300 * time.Millisecond)
-
 	// Question : que se passe-t-il si on retire ce time.Sleep final ?
 	//
 	// Réponse :

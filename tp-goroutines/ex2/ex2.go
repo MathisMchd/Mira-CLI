@@ -31,7 +31,7 @@ func main() {
 	go afficherChiffres(&wg)
 
 	// wg.Wait() bloque main() jusqu'à ce que les deux goroutines aient
-	// appelé wg.Done() (via le defer), sans jamais dépendre d'une durée
+	// appelé wg.Done() (via le defer pour être sur que c'est fait à la fin), sans jamais dépendre d'une durée
 	// arbitraire comme le faisait time.Sleep dans l'exercice 1.
 	wg.Wait()
 

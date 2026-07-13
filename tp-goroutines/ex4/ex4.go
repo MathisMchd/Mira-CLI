@@ -10,7 +10,7 @@ const nbWorkers = 4
 
 // worker lit des jobs depuis le channel jobs, calcule leur carré,
 // et envoie le résultat dans le channel resultats.
-func worker(id int, jobs <-chan int, resultats chan<- int, wg *sync.WaitGroup) {
+func worker(_ int, jobs <-chan int, resultats chan<- int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for j := range jobs {
 		resultats <- j * j
