@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -9,87 +10,84 @@ import (
 	"mira/internal/search"
 )
 
-func usage() {
-	fmt.Println("Usage:")
-	fmt.Println("  mira add \"title\" \"content\"")
-	fmt.Println("  mira list")
-	fmt.Println("  mira search <query>")
-	fmt.Println("  mira help")
+func usage(out io.Writer) {
+	fmt.Fprintln(out, "Usage:")
+	fmt.Fprintln(out, "  mira add \"title\" \"content\"")
+	fmt.Fprintln(out, "  mira list")
+	fmt.Fprintln(out, "  mira search <query>")
+	fmt.Fprintln(out, "  mira help")
+}
+
+func run(args []string, store notes.NoteStore, out io.Writer) int {
+	if len(args) < 2 {
+		usage(out)
+		return 0
+	}
+
+	switch args[1] {
+	case "add":
+		if len(args) < 4 {
+			fmt.Fprintln(out, "Usage: mira add \"title\" \"content\"")
+			return 1
+		}
+		n := notes.NewNote(args[2], args[3])
+		if err := store.Save(n); err != nil {
+			fmt.Fprintf(out, "Erreur lors de la sauvegarde: %v\n", err)
+			return 1
+		}
+		fmt.Fprintln(out, "Note ajoutée.")
+
+	case "list":
+		all, err := store.All()
+		if err != nil {
+			fmt.Fprintf(out, "Erreur lecture notes: %v\n", err)
+			return 1
+		}
+		if len(all) == 0 {
+			fmt.Fprintln(out, "Aucune note.")
+			return 0
+		}
+		start := 0
+		if len(all) > 10 {
+			start = len(all) - 10
+		}
+		for i := len(all) - 1; i >= start; i-- {
+			fmt.Fprintf(out, "- %s: %s\n", all[i].Title, all[i].Preview(80))
+		}
+
+	case "search":
+		if len(args) < 3 {
+			fmt.Fprintln(out, "Usage: mira search <query>")
+			return 1
+		}
+		all, err := store.All()
+		if err != nil {
+			fmt.Fprintf(out, "Erreur lecture notes: %v\n", err)
+			return 1
+		}
+		res := search.Search(all, strings.Join(args[2:], " "))
+		if len(res) == 0 {
+			fmt.Fprintln(out, "Aucun résultat.")
+			return 0
+		}
+		for _, n := range res {
+			fmt.Fprintf(out, "- %s: %s\n", n.Title, n.Preview(80))
+		}
+
+	case "help":
+		usage(out)
+
+	default:
+		usage(out)
+	}
+	return 0
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		usage()
-		return
-	}
-
-	cmd := os.Args[1]
 	store, err := notes.NewJSONLStore()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Erreur initialisation du magasin: %v\n", err)
 		os.Exit(1)
 	}
-
-	switch cmd {
-	case "add":
-		if len(os.Args) < 4 {
-			fmt.Println("Usage: mira add \"title\" \"content\"")
-			os.Exit(1)
-		}
-		title := os.Args[2]
-		content := os.Args[3]
-		n := notes.NewNote(title, content)
-		if err := store.Save(n); err != nil {
-			fmt.Fprintf(os.Stderr, "Erreur lors de la sauvegarde: %v\n", err)
-			os.Exit(1)
-		}
-		fmt.Println("Note ajoutée.")
-
-	case "list":
-		all, err := store.All()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Erreur lecture notes: %v\n", err)
-			os.Exit(1)
-		}
-		count := len(all)
-		if count == 0 {
-			fmt.Println("Aucune note.")
-			return
-		}
-		// show up to 10 newest notes
-		start := 0
-		if count > 10 {
-			start = count - 10
-		}
-		for i := count - 1; i >= start; i-- {
-			n := all[i]
-			fmt.Printf("- %s: %s\n", n.Title, n.Preview(80))
-		}
-
-	case "search":
-		if len(os.Args) < 3 {
-			fmt.Println("Usage: mira search <query>")
-			os.Exit(1)
-		}
-		q := strings.Join(os.Args[2:], " ")
-		all, err := store.All()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Erreur lecture notes: %v\n", err)
-			os.Exit(1)
-		}
-		res := search.Search(all, q)
-		if len(res) == 0 {
-			fmt.Println("Aucun résultat.")
-			return
-		}
-		for _, n := range res {
-			fmt.Printf("- %s: %s\n", n.Title, n.Preview(80))
-		}
-
-	case "help":
-		usage()
-
-	default:
-		usage()
-	}
+	os.Exit(run(os.Args, store, os.Stdout))
 }
