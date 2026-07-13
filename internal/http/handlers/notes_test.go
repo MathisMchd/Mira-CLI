@@ -74,6 +74,29 @@ func TestCreate_InvalidJSON(t *testing.T) {
 	}
 }
 
+func TestCreate_WrongContentType(t *testing.T) {
+	h := newHandler()
+	body := `{"title":"Go","content":"Un langage compilé"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/notes", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "text/plain")
+	w := httptest.NewRecorder()
+
+	h.Create(w, req)
+
+	if w.Code != http.StatusUnsupportedMediaType {
+		t.Fatalf("expected 415, got %d", w.Code)
+	}
+	var env map[string]interface{}
+	json.NewDecoder(w.Body).Decode(&env)
+	errObj, ok := env["error"].(map[string]interface{})
+	if !ok {
+		t.Fatal("missing error field")
+	}
+	if errObj["code"] != "UNSUPPORTED_MEDIA_TYPE" {
+		t.Errorf("expected UNSUPPORTED_MEDIA_TYPE, got %v", errObj["code"])
+	}
+}
+
 func TestGetByID_NotFound(t *testing.T) {
 	h := newHandler()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/notes/nonexistent", nil)

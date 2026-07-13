@@ -3,6 +3,7 @@ package response
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -45,6 +46,23 @@ func JSONError(w http.ResponseWriter, r *http.Request, status int, code, message
 		Meta:  meta(r),
 		Error: &Error{Code: code, Message: message},
 	})
+}
+
+// ParsePagination extrait limit et offset depuis les query params.
+// Valeurs par défaut : limit=10, offset=0. Limit plafonné à 100.
+func ParsePagination(r *http.Request) (limit, offset int) {
+	limit = 10
+	if v := r.URL.Query().Get("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 && n <= 100 {
+			limit = n
+		}
+	}
+	if v := r.URL.Query().Get("offset"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+			offset = n
+		}
+	}
+	return
 }
 
 func meta(r *http.Request) Meta {

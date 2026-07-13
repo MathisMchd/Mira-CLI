@@ -23,6 +23,7 @@ func NewRouter(s store.Store, logger *slog.Logger) http.Handler {
 	mux.Handle("GET /docs/", http.StripPrefix("/docs/", http.FileServer(http.Dir("docs"))))
 
 	return middleware.Chain(mux,
+		middleware.MuxErrors,
 		middleware.Recovery(logger),
 		middleware.Timeout(10*time.Second),
 		middleware.Logging(logger),

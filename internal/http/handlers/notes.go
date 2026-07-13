@@ -1,9 +1,7 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"mira/internal/core"
 	resp "mira/internal/http/response"
@@ -20,77 +18,52 @@ func NewNoteHandler(s store.Store) *NoteHandler {
 
 func (h *NoteHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var input core.CreateNoteInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		resp.JSONError(w, r, http.StatusBadRequest, "INVALID_JSON", "corps JSON invalide")
-		return
-	}
-	if err := input.Validate(); err != nil {
-		resp.JSONError(w, r, http.StatusUnprocessableEntity, "VALIDATION_ERROR", err.Error())
+	if !decodeAndValidate(w, r, &input) {
 		return
 	}
 	n, err := h.store.Create(input)
 	if err != nil {
-		resp.JSONError(w, r, http.StatusInternalServerError, "INTERNAL_ERROR", "erreur interne")
+		handleStoreErr(w, r, err)
 		return
 	}
 	resp.JSON(w, r, http.StatusCreated, n)
 }
 
 func (h *NoteHandler) List(w http.ResponseWriter, r *http.Request) {
-	limit, offset := parsePagination(r)
+	limit, offset := resp.ParsePagination(r)
 	notes, total, err := h.store.List(limit, offset)
 	if err != nil {
-		resp.JSONError(w, r, http.StatusInternalServerError, "INTERNAL_ERROR", "erreur interne")
+		handleStoreErr(w, r, err)
 		return
 	}
 	resp.JSONList(w, r, http.StatusOK, notes, total, limit, offset)
 }
 
 func (h *NoteHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	n, err := h.store.GetByID(id)
+	n, err := h.store.GetByID(r.PathValue("id"))
 	if err != nil {
-		if store.IsNotFound(err) {
-			resp.JSONError(w, r, http.StatusNotFound, "NOT_FOUND", "note introuvable")
-			return
-		}
-		resp.JSONError(w, r, http.StatusInternalServerError, "INTERNAL_ERROR", "erreur interne")
+		handleStoreErr(w, r, err)
 		return
 	}
 	resp.JSON(w, r, http.StatusOK, n)
 }
 
 func (h *NoteHandler) Patch(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
 	var input core.PatchNoteInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		resp.JSONError(w, r, http.StatusBadRequest, "INVALID_JSON", "corps JSON invalide")
+	if !decodeAndValidate(w, r, &input) {
 		return
 	}
-	if err := input.Validate(); err != nil {
-		resp.JSONError(w, r, http.StatusUnprocessableEntity, "VALIDATION_ERROR", err.Error())
-		return
-	}
-	n, err := h.store.Patch(id, input)
+	n, err := h.store.Patch(r.PathValue("id"), input)
 	if err != nil {
-		if store.IsNotFound(err) {
-			resp.JSONError(w, r, http.StatusNotFound, "NOT_FOUND", "note introuvable")
-			return
-		}
-		resp.JSONError(w, r, http.StatusInternalServerError, "INTERNAL_ERROR", "erreur interne")
+		handleStoreErr(w, r, err)
 		return
 	}
 	resp.JSON(w, r, http.StatusOK, n)
 }
 
 func (h *NoteHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	if err := h.store.Delete(id); err != nil {
-		if store.IsNotFound(err) {
-			resp.JSONError(w, r, http.StatusNotFound, "NOT_FOUND", "note introuvable")
-			return
-		}
-		resp.JSONError(w, r, http.StatusInternalServerError, "INTERNAL_ERROR", "erreur interne")
+	if err := h.store.Delete(r.PathValue("id")); err != nil {
+		handleStoreErr(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -104,24 +77,8 @@ func (h *NoteHandler) Search(w http.ResponseWriter, r *http.Request) {
 	}
 	notes, err := h.store.Search(q)
 	if err != nil {
-		resp.JSONError(w, r, http.StatusInternalServerError, "INTERNAL_ERROR", "erreur interne")
+		handleStoreErr(w, r, err)
 		return
 	}
 	resp.JSON(w, r, http.StatusOK, notes)
-}
-
-func parsePagination(r *http.Request) (limit, offset int) {
-	limit = 10
-	offset = 0
-	if v := r.URL.Query().Get("limit"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 && n <= 100 {
-			limit = n
-		}
-	}
-	if v := r.URL.Query().Get("offset"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
-			offset = n
-		}
-	}
-	return
 }
