@@ -1,0 +1,218 @@
+openapi: "3.1.0"
+info:
+  title: Mira Notes API
+  version: "1.0.0"
+  description: API REST pour la gestion de notes textuelles.
+
+servers:
+  - url: http://localhost:8080
+    description: Serveur local
+
+paths:
+  /api/v1/notes:
+    get:
+      summary: Lister les notes
+      operationId: listNotes
+      tags: [notes]
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10, minimum: 1, maximum: 100 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0, minimum: 0 }
+      responses:
+        "200":
+          description: Liste paginée
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NoteListEnvelope"
+
+    post:
+      summary: Créer une note
+      operationId: createNote
+      tags: [notes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNoteInput"
+      responses:
+        "201":
+          description: Note créée
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NoteEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/notes/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+
+    get:
+      summary: Récupérer une note
+      operationId: getNoteById
+      tags: [notes]
+      responses:
+        "200":
+          description: Note trouvée
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NoteEnvelope"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      summary: Mettre à jour partiellement une note
+      operationId: patchNote
+      tags: [notes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchNoteInput"
+      responses:
+        "200":
+          description: Note mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NoteEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+    delete:
+      summary: Supprimer une note
+      operationId: deleteNote
+      tags: [notes]
+      responses:
+        "204":
+          description: Note supprimée
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/search:
+    get:
+      summary: Recherche textuelle dans les notes
+      operationId: searchNotes
+      tags: [search]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+          description: Terme de recherche (titre et contenu)
+      responses:
+        "200":
+          description: Résultats de recherche
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NoteListEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+components:
+  schemas:
+    Note:
+      type: object
+      properties:
+        id:        { type: string, example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890" }
+        title:     { type: string, example: "Go" }
+        content:   { type: string, example: "Un langage compilé et typé statiquement." }
+        tags:      { type: array, items: { type: string } }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CreateNoteInput:
+      type: object
+      required: [title, content]
+      properties:
+        title:   { type: string, maxLength: 200, example: "Go" }
+        content: { type: string, example: "Un langage compilé." }
+        tags:    { type: array, items: { type: string } }
+
+    PatchNoteInput:
+      type: object
+      properties:
+        title:   { type: string, maxLength: 200 }
+        content: { type: string }
+        tags:    { type: array, items: { type: string } }
+
+    Meta:
+      type: object
+      properties:
+        request_id: { type: string }
+        timestamp:  { type: string, format: date-time }
+        total:      { type: integer }
+        limit:      { type: integer }
+        offset:     { type: integer }
+
+    Error:
+      type: object
+      properties:
+        code:    { type: string, example: "NOT_FOUND" }
+        message: { type: string, example: "note introuvable" }
+
+    NoteEnvelope:
+      type: object
+      properties:
+        data: { $ref: "#/components/schemas/Note" }
+        meta: { $ref: "#/components/schemas/Meta" }
+
+    NoteListEnvelope:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Note" }
+        meta: { $ref: "#/components/schemas/Meta" }
+
+    ErrorEnvelope:
+      type: object
+      properties:
+        error: { $ref: "#/components/schemas/Error" }
+        meta:  { $ref: "#/components/schemas/Meta" }
+
+  responses:
+    BadRequest:
+      description: JSON invalide
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+          example:
+            error: { code: "INVALID_JSON", message: "corps JSON invalide" }
+            meta: { timestamp: "2026-07-13T10:00:00Z" }
+
+    ValidationError:
+      description: Données invalides
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+          example:
+            error: { code: "VALIDATION_ERROR", message: "title is required" }
+            meta: { timestamp: "2026-07-13T10:00:00Z" }
+
+    NotFound:
+      description: Ressource introuvable
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+          example:
+            error: { code: "NOT_FOUND", message: "note introuvable" }
+            meta: { timestamp: "2026-07-13T10:00:00Z" }
