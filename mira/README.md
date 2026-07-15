@@ -34,6 +34,10 @@ go build -o mira.exe .
 .\mira.exe help
 ```
 
+### Interface web
+
+Une interface web minimale (statique, sans dépendance ni étape de build) est servie directement par l'API sur **http://localhost:8080/app/** : création de note, liste paginée, recherche, suppression, avec suivi en direct du statut d'enrichissement.
+
 ---
 
 ## CLI
@@ -233,6 +237,10 @@ mira/
 ├── docs/
 │   ├── openapi.yaml           # schéma OpenAPI 3.1
 │   └── index.html              # Swagger UI (servi sur /docs/)
+├── web/
+│   ├── index.html               # interface web statique (servie sur /app/)
+│   ├── app.js                    # logique (fetch API, rendu, polling du statut d'enrichissement)
+│   └── styles.css                # styles
 ├── Dockerfile                  # build multi-stage de l'API
 ├── docker-compose.yml           # db (pgvector) + ollama + api
 ├── .env.example                  # variables disponibles

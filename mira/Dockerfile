@@ -15,6 +15,7 @@ WORKDIR /app
 
 COPY --from=builder /out/mira-api ./mira-api
 COPY docs ./docs
+COPY web ./web
 
 EXPOSE 8080
 ENTRYPOINT ["./mira-api"]

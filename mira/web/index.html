@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mira</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <h1>Mira</h1>
+      <p class="tagline">Un carnet de notes qui comprend ce que vous écrivez.</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="panel">
+      <h2>Nouvelle note</h2>
+      <form id="create-form" class="create-form">
+        <input id="create-title" type="text" placeholder="Titre" maxlength="200" required />
+        <textarea id="create-content" placeholder="Contenu" rows="3" required></textarea>
+        <input id="create-tags" type="text" placeholder="Tags (séparés par des virgules, optionnel)" />
+        <button type="submit">Ajouter</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Rechercher</h2>
+      <form id="search-form" class="search-form">
+        <input id="search-input" type="text" placeholder="Rechercher par mot ou par sens…" />
+        <button type="submit">Rechercher</button>
+        <button type="button" id="clear-search" class="secondary" hidden>Effacer</button>
+      </form>
+    </section>
+
+    <div id="banner" class="banner" hidden></div>
+
+    <section class="panel">
+      <div class="notes-header">
+        <h2 id="notes-title">Notes</h2>
+        <button type="button" id="refresh-btn" class="secondary" title="Rafraîchir">↻</button>
+      </div>
+      <div id="notes-list" class="notes-list"></div>
+      <div id="pagination" class="pagination"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

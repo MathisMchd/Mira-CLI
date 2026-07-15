@@ -22,6 +22,8 @@ func NewRouter(s store.Store, dispatcher *enrichment.Dispatcher, embedder enrich
 	mux.HandleFunc("DELETE /api/v1/notes/{id}", notes.Delete)
 	mux.HandleFunc("GET /api/v1/search", notes.Search)
 	mux.Handle("GET /docs/", http.StripPrefix("/docs/", http.FileServer(http.Dir("docs"))))
+	mux.Handle("GET /app/", http.StripPrefix("/app/", http.FileServer(http.Dir("web"))))
+	mux.Handle("GET /{$}", http.RedirectHandler("/app/", http.StatusFound))
 
 	return middleware.Chain(mux,
 		middleware.MuxErrors,
