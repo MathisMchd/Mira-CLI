@@ -20,9 +20,8 @@ profile.cov
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-# Go workspace file
-go.work
-go.work.sum
+# go.work / go.work.sum: le workspace vit au niveau du dépôt (../go.work),
+# pas ici — voir Mira-CLI/.gitignore.
 
 # env file
 .env

@@ -108,7 +108,16 @@ paths:
 
   /api/v1/search:
     get:
-      summary: Recherche textuelle dans les notes
+      summary: Recherche hybride (texte intégral + similarité vectorielle)
+      description: >
+        Combine une recherche plein texte (PostgreSQL tsvector/GIN) et une
+        similarité vectorielle sur les embeddings produits par
+        l'enrichissement automatique (pgvector). Une note apparaît si son
+        contenu matche la requête au sens plein texte, ou si son embedding
+        est sémantiquement proche de la requête. Les deux scores sont
+        combinés pour le classement. Si le calcul de l'embedding de la
+        requête échoue (service d'embeddings indisponible), la recherche se
+        replie automatiquement sur le plein texte seul.
       operationId: searchNotes
       tags: [search]
       parameters:
@@ -136,6 +145,25 @@ components:
         title:     { type: string, example: "Go" }
         content:   { type: string, example: "Un langage compilé et typé statiquement." }
         tags:      { type: array, items: { type: string } }
+        summary:
+          type: string
+          description: Résumé court généré par l'enrichissement automatique.
+          example: "Un langage compilé et typé statiquement."
+        score:
+          type: number
+          format: double
+          description: Score heuristique [0,1] produit par l'enrichissement automatique.
+          example: 0.62
+        enrichment_status:
+          type: string
+          enum: [pending, done, failed]
+          description: >
+            Statut de l'enrichissement asynchrone déclenché après chaque
+            création/modification de note. La note est retournée
+            immédiatement avec le statut "pending" ; les champs summary,
+            score, tags additionnels et l'embedding vectoriel sont mis à
+            jour en arrière-plan par le pool de workers.
+          example: pending
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
 

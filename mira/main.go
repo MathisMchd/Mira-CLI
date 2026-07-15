@@ -1,13 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 
-	"mira/internal/notes"
-	"mira/internal/search"
+	"mira/internal/apiclient"
+	"mira/internal/core"
 )
 
 func usage(out io.Writer) {
@@ -18,11 +19,23 @@ func usage(out io.Writer) {
 	fmt.Fprintln(out, "  mira help")
 }
 
-func run(args []string, store notes.NoteStore, out io.Writer) int {
+func preview(content string, length int) string {
+	if length <= 0 {
+		return ""
+	}
+	if len(content) <= length {
+		return content
+	}
+	return content[:length]
+}
+
+func run(args []string, client *apiclient.Client, out io.Writer) int {
 	if len(args) < 2 {
 		usage(out)
 		return 0
 	}
+
+	ctx := context.Background()
 
 	switch args[1] {
 	case "add":
@@ -30,29 +43,25 @@ func run(args []string, store notes.NoteStore, out io.Writer) int {
 			fmt.Fprintln(out, "Usage: mira add \"title\" \"content\"")
 			return 1
 		}
-		n := notes.NewNote(args[2], args[3])
-		if err := store.Save(n); err != nil {
+		input := core.CreateNoteInput{Title: args[2], Content: args[3]}
+		if _, err := client.Create(ctx, input); err != nil {
 			fmt.Fprintf(out, "Erreur lors de la sauvegarde: %v\n", err)
 			return 1
 		}
 		fmt.Fprintln(out, "Note ajoutée.")
 
 	case "list":
-		all, err := store.All()
+		notes, err := client.List(ctx, 10, 0)
 		if err != nil {
 			fmt.Fprintf(out, "Erreur lecture notes: %v\n", err)
 			return 1
 		}
-		if len(all) == 0 {
+		if len(notes) == 0 {
 			fmt.Fprintln(out, "Aucune note.")
 			return 0
 		}
-		start := 0
-		if len(all) > 10 {
-			start = len(all) - 10
-		}
-		for i := len(all) - 1; i >= start; i-- {
-			fmt.Fprintf(out, "- %s: %s\n", all[i].Title, all[i].Preview(80))
+		for _, n := range notes {
+			fmt.Fprintf(out, "- %s: %s\n", n.Title, preview(n.Content, 80))
 		}
 
 	case "search":
@@ -60,18 +69,17 @@ func run(args []string, store notes.NoteStore, out io.Writer) int {
 			fmt.Fprintln(out, "Usage: mira search <query>")
 			return 1
 		}
-		all, err := store.All()
+		notes, err := client.Search(ctx, strings.Join(args[2:], " "))
 		if err != nil {
-			fmt.Fprintf(out, "Erreur lecture notes: %v\n", err)
+			fmt.Fprintf(out, "Erreur recherche: %v\n", err)
 			return 1
 		}
-		res := search.Search(all, strings.Join(args[2:], " "))
-		if len(res) == 0 {
+		if len(notes) == 0 {
 			fmt.Fprintln(out, "Aucun résultat.")
 			return 0
 		}
-		for _, n := range res {
-			fmt.Fprintf(out, "- %s: %s\n", n.Title, n.Preview(80))
+		for _, n := range notes {
+			fmt.Fprintf(out, "- %s: %s\n", n.Title, preview(n.Content, 80))
 		}
 
 	case "help":
@@ -84,10 +92,10 @@ func run(args []string, store notes.NoteStore, out io.Writer) int {
 }
 
 func main() {
-	store, err := notes.NewJSONLStore()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Erreur initialisation du magasin: %v\n", err)
-		os.Exit(1)
+	baseURL := os.Getenv("MIRA_API_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:8080"
 	}
-	os.Exit(run(os.Args, store, os.Stdout))
+	client := apiclient.New(baseURL)
+	os.Exit(run(os.Args, client, os.Stdout))
 }

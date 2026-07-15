@@ -1,0 +1,70 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mira}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mira}
+      POSTGRES_DB: ${POSTGRES_DB:-mira}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mira} -d ${POSTGRES_DB:-mira}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Tire les deux modèles (embedding + génératif) une fois, puis s'arrête
+  # (exit 0). L'API n'accepte de trafic qu'une fois ce job terminé avec
+  # succès. Les modèles restent ensuite en cache dans le volume ollama_data :
+  # les démarrages suivants n'ont rien à retélécharger.
+  ollama-pull:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: ollama:11434
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        ollama pull ${OLLAMA_EMBED_MODEL:-nomic-embed-text} &&
+        ollama pull ${OLLAMA_GEN_MODEL:-qwen2.5:1.5b-instruct}
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama-pull:
+        condition: service_completed_successfully
+    environment:
+      ADDR: ":8080"
+      DATABASE_URL: postgres://${POSTGRES_USER:-mira}:${POSTGRES_PASSWORD:-mira}@db:5432/${POSTGRES_DB:-mira}?sslmode=disable
+      SEED: ${SEED:-true}
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_EMBED_MODEL: ${OLLAMA_EMBED_MODEL:-nomic-embed-text}
+      OLLAMA_GEN_MODEL: ${OLLAMA_GEN_MODEL:-qwen2.5:1.5b-instruct}
+      ENRICHMENT_WORKERS: ${ENRICHMENT_WORKERS:-4}
+      ENRICHMENT_QUEUE_SIZE: ${ENRICHMENT_QUEUE_SIZE:-256}
+      ENRICHMENT_TIMEOUT: ${ENRICHMENT_TIMEOUT:-30s}
+    ports:
+      - "8080:8080"
+
+volumes:
+  db_data:
+  ollama_data:

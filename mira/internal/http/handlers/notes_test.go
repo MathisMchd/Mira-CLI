@@ -2,17 +2,48 @@ package handlers_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"mira/internal/core"
+	"mira/internal/enrichment"
 	"mira/internal/http/handlers"
 	"mira/internal/store"
 )
 
+// fakeEmbedder évite tout appel réseau vers Ollama dans les tests unitaires.
+type fakeEmbedder struct{}
+
+func (fakeEmbedder) Embed(ctx context.Context, text string) ([]float32, error) {
+	return []float32{0.1, 0.2, 0.3}, nil
+}
+
+func (fakeEmbedder) Name() string { return "fake" }
+
+// fakeEnricher évite tout appel réseau vers Ollama dans les tests unitaires.
+type fakeEnricher struct{}
+
+func (fakeEnricher) Enrich(ctx context.Context, note core.Note) (core.EnrichmentResult, error) {
+	return core.EnrichmentResult{
+		Tags:      note.Tags,
+		Summary:   note.Content,
+		Score:     0.5,
+		Embedding: []float32{0.1, 0.2, 0.3},
+		Model:     "fake",
+	}, nil
+}
+
 func newHandler() *handlers.NoteHandler {
-	return handlers.NewNoteHandler(store.NewMemory())
+	s := store.NewMemory()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	dispatcher := enrichment.NewDispatcher(s, fakeEnricher{}, logger, 1, 10, time.Second)
+	return handlers.NewNoteHandler(s, dispatcher, fakeEmbedder{}, logger)
 }
 
 func TestCreate_Success(t *testing.T) {

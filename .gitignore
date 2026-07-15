@@ -1,0 +1,5 @@
+# go.work est commité volontairement (workspace reliant go-warmup, mira,
+# tp-goroutines). go.work.sum, lui, est un lock file auto-généré et
+# spécifique à la résolution locale (mélange les dépendances des trois
+# modules) : pas besoin de le versionner, il se régénère automatiquement.
+go.work.sum

@@ -1,0 +1,5 @@
+.git
+*.exe
+*.md
+.env
+mira.exe

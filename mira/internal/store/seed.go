@@ -1,6 +1,10 @@
 package store
 
-import "mira/internal/core"
+import (
+	"context"
+
+	"mira/internal/core"
+)
 
 var seedNotes = []core.CreateNoteInput{
 	{
@@ -21,11 +25,18 @@ var seedNotes = []core.CreateNoteInput{
 }
 
 // Seed insère un jeu de notes de démonstration dans le store.
-// Destiné à l'environnement de développement uniquement.
-func Seed(s Store) error {
+// Destiné à l'environnement de développement uniquement. Contrairement à un
+// POST /api/v1/notes, cet appel passe directement par le repository — il ne
+// déclenche donc pas l'enrichissement automatique de lui-même ; onCreated
+// (typiquement dispatcher.Enqueue) permet à l'appelant de le faire quand même.
+func Seed(ctx context.Context, s Store, onCreated func(noteID string)) error {
 	for _, input := range seedNotes {
-		if _, err := s.Create(input); err != nil {
+		n, err := s.Create(ctx, input)
+		if err != nil {
 			return err
+		}
+		if onCreated != nil {
+			onCreated(n.ID)
 		}
 	}
 	return nil

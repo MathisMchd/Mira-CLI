@@ -5,14 +5,15 @@ import (
 	"net/http"
 	"time"
 
+	"mira/internal/enrichment"
 	"mira/internal/http/handlers"
 	"mira/internal/http/middleware"
 	"mira/internal/store"
 )
 
-func NewRouter(s store.Store, logger *slog.Logger) http.Handler {
+func NewRouter(s store.Store, dispatcher *enrichment.Dispatcher, embedder enrichment.Embedder, logger *slog.Logger) http.Handler {
 	mux := http.NewServeMux()
-	notes := handlers.NewNoteHandler(s)
+	notes := handlers.NewNoteHandler(s, dispatcher, embedder, logger)
 
 	mux.HandleFunc("POST /api/v1/notes", notes.Create)
 	mux.HandleFunc("GET /api/v1/notes", notes.List)

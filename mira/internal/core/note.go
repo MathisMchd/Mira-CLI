@@ -6,13 +6,22 @@ import (
 	"time"
 )
 
+const (
+	EnrichmentPending = "pending"
+	EnrichmentDone    = "done"
+	EnrichmentFailed  = "failed"
+)
+
 type Note struct {
-	ID        string    `json:"id"`
-	Title     string    `json:"title"`
-	Content   string    `json:"content"`
-	Tags      []string  `json:"tags"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID               string    `json:"id"`
+	Title            string    `json:"title"`
+	Content          string    `json:"content"`
+	Tags             []string  `json:"tags"`
+	Summary          string    `json:"summary"`
+	Score            float64   `json:"score"`
+	EnrichmentStatus string    `json:"enrichment_status"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
 }
 
 type CreateNoteInput struct {
