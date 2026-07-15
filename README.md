@@ -2,6 +2,35 @@
 
 Dépôt de travail pour la formation Go (ESGI). Il regroupe le projet fil rouge **Mira** ainsi que les exercices réalisés en parallèle.
 
+## Mira — présentation
+
+**Mira, c'est un carnet de notes qui comprend ce que vous écrivez.**
+
+### Le problème
+
+Un outil de prise de notes classique se contente de stocker du texte. Pour retrouver une information plus tard, il faut se souvenir des mots exacts utilisés, et rien n'aide à organiser ou hiérarchiser ce qu'on a noté.
+
+### Ce que fait Mira
+
+On écrit une note, comme dans n'importe quel bloc-notes — un titre, un contenu. Mira s'occupe automatiquement du reste en arrière-plan :
+
+- **Il résume** la note en une phrase
+- **Il l'étiquette** avec des mots-clés pertinents, sans effort de classement de la part de l'utilisateur
+- **Il évalue la richesse** du contenu (un score de qualité)
+- **Il comprend le sens** de la note, pas seulement les mots qu'elle contient
+
+Résultat : la recherche fonctionne même quand on ne se souvient pas des mots exacts. Par exemple, une note « RDV chez le dentiste jeudi 14h, plombage à refaire » peut être retrouvée en cherchant simplement « douleur aux dents » — parce que Mira comprend que les deux idées sont liées, même si aucun mot n'est commun.
+
+Tout cela tourne en local, sans dépendre d'un service payant tiers ni envoyer les notes à un cloud externe : l'intelligence artificielle est auto-hébergée.
+
+### Ce qui le rend robuste
+
+L'ajout d'une note reste instantané, même si le traitement intelligent derrière prend quelques secondes — l'utilisateur n'attend jamais l'IA pour continuer à travailler. Et si le module d'IA venait à tomber en panne, l'application continue de fonctionner normalement : la recherche classique prend simplement le relais, sans interruption de service perceptible.
+
+### En résumé
+
+Mira transforme une prise de notes brute en base de connaissances organisée et interrogeable par le sens, tout en garantissant une expérience rapide et fiable — même quand la partie « intelligente » du système est sollicitée ou indisponible.
+
 ## Structure
 
 ```
