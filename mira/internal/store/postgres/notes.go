@@ -30,7 +30,7 @@ func (r *Repository) Create(ctx context.Context, input core.CreateNoteInput) (*c
 	if err != nil {
 		return nil, fmt.Errorf("begin transaction: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	title := strings.TrimSpace(input.Title)
 	content := strings.TrimSpace(input.Content)
@@ -116,7 +116,7 @@ func (r *Repository) Patch(ctx context.Context, id string, input core.PatchNoteI
 	if err != nil {
 		return nil, fmt.Errorf("begin transaction: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	args := []any{id}
 	setParts := []string{"updated_at = now()"}
@@ -187,7 +187,7 @@ func replaceTags(ctx context.Context, tx pgx.Tx, noteID string, tags []string) e
 		batch.Queue(`INSERT INTO note_tags (note_id, tag) VALUES ($1::uuid, $2) ON CONFLICT DO NOTHING`, noteID, t)
 	}
 	br := tx.SendBatch(ctx, batch)
-	defer br.Close()
+	defer func() { _ = br.Close() }()
 	for range tags {
 		if _, err := br.Exec(); err != nil {
 			return fmt.Errorf("insert tags: %w", err)

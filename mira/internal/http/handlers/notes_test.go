@@ -87,7 +87,7 @@ func TestCreate_MissingTitle(t *testing.T) {
 		t.Fatalf("expected 422, got %d", w.Code)
 	}
 	var env map[string]interface{}
-	json.NewDecoder(w.Body).Decode(&env)
+	_ = json.NewDecoder(w.Body).Decode(&env)
 	if env["error"] == nil {
 		t.Error("expected error field in response")
 	}
@@ -118,7 +118,7 @@ func TestCreate_WrongContentType(t *testing.T) {
 		t.Fatalf("expected 415, got %d", w.Code)
 	}
 	var env map[string]interface{}
-	json.NewDecoder(w.Body).Decode(&env)
+	_ = json.NewDecoder(w.Body).Decode(&env)
 	errObj, ok := env["error"].(map[string]interface{})
 	if !ok {
 		t.Fatal("missing error field")
@@ -140,7 +140,7 @@ func TestGetByID_NotFound(t *testing.T) {
 		t.Fatalf("expected 404, got %d", w.Code)
 	}
 	var env map[string]interface{}
-	json.NewDecoder(w.Body).Decode(&env)
+	_ = json.NewDecoder(w.Body).Decode(&env)
 	errObj, ok := env["error"].(map[string]interface{})
 	if !ok {
 		t.Fatal("missing error field")

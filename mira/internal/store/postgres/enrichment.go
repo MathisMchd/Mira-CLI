@@ -22,7 +22,7 @@ func (r *Repository) SaveEnrichment(ctx context.Context, noteID string, result c
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	tag, err := tx.Exec(ctx, `
 		UPDATE notes

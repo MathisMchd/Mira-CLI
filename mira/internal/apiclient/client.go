@@ -97,7 +97,7 @@ func (c *Client) do(ctx context.Context, method, path string, body []byte, out a
 	if err != nil {
 		return fmt.Errorf("impossible de joindre l'API sur %s — vérifie qu'elle est démarrée (docker compose up): %w", c.baseURL, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNoContent {
 		return nil

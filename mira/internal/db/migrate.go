@@ -24,7 +24,7 @@ func Migrate(dsn string) error {
 	if err != nil {
 		return fmt.Errorf("ouverture connexion migrations: %w", err)
 	}
-	defer sqlDB.Close()
+	defer func() { _ = sqlDB.Close() }()
 
 	driver, err := migratepgx.WithInstance(sqlDB, &migratepgx.Config{})
 	if err != nil {
