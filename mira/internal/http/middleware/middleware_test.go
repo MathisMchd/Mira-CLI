@@ -157,6 +157,32 @@ func TestMuxErrors_reformats404(t *testing.T) {
 	}
 }
 
+// TestMuxErrors_preservesHandlerOwnJSON404 vérifie qu'un 404 JSON déjà bien
+// formé par un handler (ex. "note introuvable" sur une route valide mais un
+// id inexistant) n'est jamais écrasé par le message générique "route
+// introuvable" — seul le 404 texte brut par défaut du mux doit l'être.
+func TestMuxErrors_preservesHandlerOwnJSON404(t *testing.T) {
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"error":{"code":"NOT_FOUND","message":"note introuvable"}}`))
+	})
+
+	rec := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/api/v1/notes/inconnu", nil)
+	MuxErrors(next).ServeHTTP(rec, r)
+
+	var body struct {
+		Error struct{ Code, Message string } `json:"error"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("réponse non-JSON: %v (%s)", err, rec.Body.String())
+	}
+	if body.Error.Message != "note introuvable" {
+		t.Errorf("message = %q, attendu 'note introuvable' (ne doit pas être écrasé par 'route introuvable')", body.Error.Message)
+	}
+}
+
 func TestMuxErrors_reformats405AndPreservesAllow(t *testing.T) {
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Allow", "GET, POST")

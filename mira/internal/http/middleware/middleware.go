@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"time"
 
@@ -158,10 +159,11 @@ func MuxErrors(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		bw := newBufResponseWriter()
 		next.ServeHTTP(bw, r)
-		switch bw.status {
-		case http.StatusNotFound:
+		alreadyJSON := strings.HasPrefix(bw.header.Get("Content-Type"), "application/json")
+		switch {
+		case bw.status == http.StatusNotFound && !alreadyJSON:
 			resp.JSONError(w, r, http.StatusNotFound, "NOT_FOUND", "route introuvable")
-		case http.StatusMethodNotAllowed:
+		case bw.status == http.StatusMethodNotAllowed && !alreadyJSON:
 			if allow := bw.header.Get("Allow"); allow != "" {
 				w.Header().Set("Allow", allow)
 			}
