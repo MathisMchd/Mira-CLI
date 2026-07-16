@@ -15,8 +15,8 @@ func TestLoadDotEnv_setsUnsetVariables(t *testing.T) {
 	}
 
 	for _, key := range []string{"FOO", "QUOTED", "SINGLE", "BAZ"} {
-		os.Unsetenv(key)
-		t.Cleanup(func(k string) func() { return func() { os.Unsetenv(k) } }(key))
+		_ = os.Unsetenv(key)
+		t.Cleanup(func(k string) func() { return func() { _ = os.Unsetenv(k) } }(key))
 	}
 
 	if err := LoadDotEnv(path); err != nil {
@@ -43,8 +43,8 @@ func TestLoadDotEnv_doesNotOverrideExistingEnv(t *testing.T) {
 		t.Fatalf("écriture fichier de test: %v", err)
 	}
 
-	os.Setenv("PRIORITY", "from-env")
-	t.Cleanup(func() { os.Unsetenv("PRIORITY") })
+	_ = os.Setenv("PRIORITY", "from-env")
+	t.Cleanup(func() { _ = os.Unsetenv("PRIORITY") })
 
 	if err := LoadDotEnv(path); err != nil {
 		t.Fatalf("LoadDotEnv: %v", err)
@@ -67,9 +67,9 @@ func TestLoadDotEnv_ignoresBlankLinesAndComments(t *testing.T) {
 	if err := os.WriteFile(path, []byte("\n# juste un commentaire\n   \nNOMALFORMED\nOK=1\n"), 0o644); err != nil {
 		t.Fatalf("écriture fichier de test: %v", err)
 	}
-	os.Unsetenv("OK")
-	os.Unsetenv("NOMALFORMED")
-	t.Cleanup(func() { os.Unsetenv("OK") })
+	_ = os.Unsetenv("OK")
+	_ = os.Unsetenv("NOMALFORMED")
+	t.Cleanup(func() { _ = os.Unsetenv("OK") })
 
 	if err := LoadDotEnv(path); err != nil {
 		t.Fatalf("LoadDotEnv: %v", err)

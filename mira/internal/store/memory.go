@@ -49,15 +49,15 @@ func (s *MemoryStore) Create(ctx context.Context, input core.CreateNoteInput) (*
 	s.mu.Lock()
 	s.notes[n.ID] = n
 	s.order = append(s.order, n.ID)
-	s.mu.Unlock()
 	cp := *n
+	s.mu.Unlock()
 	return &cp, nil
 }
 
 func (s *MemoryStore) GetByID(ctx context.Context, id string) (*core.Note, error) {
 	s.mu.RLock()
+	defer s.mu.RUnlock()
 	n, ok := s.notes[id]
-	s.mu.RUnlock()
 	if !ok {
 		return nil, ErrNotFound{ID: id}
 	}
