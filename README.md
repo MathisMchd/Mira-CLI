@@ -5,6 +5,7 @@ Dépôt de travail pour la formation Go (ESGI). Il regroupe le projet fil rouge 
 
 [Vidéo de présentation du projet](https://youtu.be/1-CJCLDuaTk)
 A savoir que j'ai oublié de présenté la recherche vectorielle :/)
+Readme du projet spéicifique mira avec l'API, le CLI et le MCP [mira/README.md](mira/README.md)
 
 ## Mira — présentation
 
