@@ -69,7 +69,7 @@ func run(args []string, client *apiclient.Client, out io.Writer) int {
 			_, _ = fmt.Fprintln(out, "Usage: mira search <query>")
 			return 1
 		}
-		notes, err := client.Search(ctx, strings.Join(args[2:], " "))
+		notes, err := client.Search(ctx, strings.Join(args[2:], " "), 0)
 		if err != nil {
 			_, _ = fmt.Fprintf(out, "Erreur recherche: %v\n", err)
 			return 1
@@ -96,6 +96,6 @@ func main() {
 	if baseURL == "" {
 		baseURL = "http://localhost:8080"
 	}
-	client := apiclient.New(baseURL)
+	client := apiclient.New(baseURL, "")
 	os.Exit(run(os.Args, client, os.Stdout))
 }

@@ -22,12 +22,17 @@ const defaultTimeout = 10 * time.Second
 
 type Client struct {
 	baseURL string
+	apiKey  string
 	http    *http.Client
 }
 
-func New(baseURL string) *Client {
+// New crée un client pour l'API mira. apiKey est optionnelle (chaîne vide si
+// l'API n'exige pas encore d'authentification) ; si elle est renseignée, elle
+// est envoyée en en-tête Authorization sur chaque requête.
+func New(baseURL, apiKey string) *Client {
 	return &Client{
 		baseURL: strings.TrimRight(baseURL, "/"),
+		apiKey:  apiKey,
 		http:    &http.Client{Timeout: defaultTimeout},
 	}
 }
@@ -70,8 +75,21 @@ func (c *Client) List(ctx context.Context, limit, offset int) ([]*core.Note, err
 	return notes, nil
 }
 
-func (c *Client) Search(ctx context.Context, query string) ([]*core.Note, error) {
+func (c *Client) GetByID(ctx context.Context, id string) (*core.Note, error) {
+	var n core.Note
+	if err := c.do(ctx, http.MethodGet, "/api/v1/notes/"+url.PathEscape(id), nil, &n); err != nil {
+		return nil, err
+	}
+	return &n, nil
+}
+
+// Search effectue une recherche hybride. limit borne le nombre de résultats
+// (0 ou négatif : laisse l'API appliquer son propre défaut).
+func (c *Client) Search(ctx context.Context, query string, limit int) ([]*core.Note, error) {
 	path := "/api/v1/search?q=" + url.QueryEscape(query)
+	if limit > 0 {
+		path += fmt.Sprintf("&limit=%d", limit)
+	}
 	var notes []*core.Note
 	if err := c.do(ctx, http.MethodGet, path, nil, &notes); err != nil {
 		return nil, err
@@ -91,6 +109,9 @@ func (c *Client) do(ctx context.Context, method, path string, body []byte, out a
 	}
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
+	}
+	if c.apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	}
 
 	resp, err := c.http.Do(req)

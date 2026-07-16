@@ -26,6 +26,10 @@ profile.cov
 # env file
 .env
 
+# config locale du serveur MCP (peut contenir une clé API) ; voir
+# cmd/mira-mcp/config.example.json pour le modèle à copier
+cmd/mira-mcp/config.json
+
 # Editor/IDE
 # .idea/
 # .vscode/

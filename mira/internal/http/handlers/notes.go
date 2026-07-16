@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
 	"mira/internal/core"
@@ -94,6 +95,13 @@ func (h *NoteHandler) Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	limit := 0
+	if v := r.URL.Query().Get("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 && n <= 100 {
+			limit = n
+		}
+	}
+
 	var queryEmbedding []float32
 	embedCtx, cancel := context.WithTimeout(r.Context(), searchEmbedTimeout)
 	embedding, err := h.embedder.Embed(embedCtx, q)
@@ -105,7 +113,7 @@ func (h *NoteHandler) Search(w http.ResponseWriter, r *http.Request) {
 		queryEmbedding = embedding
 	}
 
-	notes, err := h.store.Search(r.Context(), q, queryEmbedding, 0)
+	notes, err := h.store.Search(r.Context(), q, queryEmbedding, limit)
 	if err != nil {
 		handleStoreErr(w, r, err)
 		return

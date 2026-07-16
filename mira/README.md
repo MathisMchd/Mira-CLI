@@ -18,7 +18,7 @@ Ceci démarre :
 | Service       | Rôle                                                                        |
 |---------------|-------------------------------------------------------------------------------|
 | `db`          | PostgreSQL 16 + extension pgvector, port `5432`                              |
-| `ollama`      | Serveur Ollama local (embedding + génération)                                |
+| `ollama`      | Serveur Ollama (embedding + génération), port `11434`                        |
 | `ollama-pull` | Tire les deux modèles une fois, puis s'arrête (l'API attend qu'il finisse)    |
 | `api`         | API REST mira, port `8080`, migrations appliquées au démarrage               |
 
@@ -27,7 +27,7 @@ Le premier démarrage télécharge l'image Ollama et les deux modèles (`nomic-e
 Une fois `docker compose up` prêt :
 
 ```sh
-go build -o mira.exe .
+go build -o mira.exe ./cmd/mira
 .\mira.exe add "titre" "contenu"
 .\mira.exe list
 .\mira.exe search <query>
@@ -77,7 +77,7 @@ Variables lues depuis `.env` (voir `.env.example`) ou l'environnement (qui a pri
 | GET     | `/api/v1/notes/{id}`     | Récupérer par ID                                |
 | PATCH   | `/api/v1/notes/{id}`     | Mise à jour partielle (déclenche l'enrichissement)|
 | DELETE  | `/api/v1/notes/{id}`     | Supprimer                                       |
-| GET     | `/api/v1/search?q=...`   | Recherche hybride (texte intégral + vecteur)    |
+| GET     | `/api/v1/search?q=...&limit=...` | Recherche hybride (texte intégral + vecteur), `limit` optionnel (défaut 20, max 100) |
 | GET     | `/docs/openapi.yaml`     | Schéma OpenAPI 3.1                              |
 | GET     | `/docs/`                 | Swagger UI (interface de test)                  |
 
@@ -142,6 +142,114 @@ Variables lues depuis `.env` (voir `.env.example`) ou l'environnement (qui a pri
 
 ---
 
+## Serveur MCP
+
+`cmd/mira-mcp` expose la mémoire mira à un agent IA (Claude Code, Claude Desktop, tout
+hôte compatible [Model Context Protocol](https://modelcontextprotocol.io)) via un serveur
+**MCP en transport stdio** (JSON-RPC 2.0), construit avec
+[`modelcontextprotocol/go-sdk`](https://github.com/modelcontextprotocol/go-sdk).
+
+Comme la CLI, il passe systématiquement par l'API HTTP (`internal/apiclient`), jamais par
+le store en direct : c'est ce qui garantit que chaque note créée par un agent déclenche
+bien l'enrichissement automatique. **L'API doit donc être démarrée avant d'utiliser le
+serveur MCP.**
+
+### Tools exposés
+
+| Tool | Paramètres | Rôle |
+|---|---|---|
+| `search_notes` | `query` (requis), `limit` (défaut 10, max 50) | recherche hybride plein texte + vectorielle |
+| `get_note` | `id` (requis) | note complète (contenu, tags, résumé, statut d'enrichissement) |
+| `add_note` | `title`, `content` (requis), `tags` (optionnel) | crée une note (enrichissement asynchrone) |
+| `list_recent_notes` | `limit` (défaut 10, max 100) | dernières notes créées |
+
+`search_notes` et `list_recent_notes` retournent des résumés légers (extrait, tags,
+statut) plutôt que le contenu complet ; utiliser `get_note` avec l'`id` retourné pour
+récupérer le contenu intégral d'une note.
+
+### Build
+
+```sh
+go build -o mira-mcp.exe ./cmd/mira-mcp
+```
+
+(ou `go run ./cmd/mira-mcp` en développement).
+
+### Configuration
+
+Deux façons complémentaires de configurer le serveur, indépendantes du client MCP utilisé
+pour le lancer :
+
+1. **Fichier `cmd/mira-mcp/config.json`** (copier `config.example.json`, ignoré par git —
+   peut contenir une clé) :
+   ```json
+   {
+     "api_url": "http://localhost:8080",
+     "api_key": ""
+   }
+   ```
+2. **Variables d'environnement** — ont toujours priorité sur le fichier :
+
+   | Variable | Défaut | Rôle |
+   |---|---|---|
+   | `MIRA_API_URL` | `http://localhost:8080` | Base URL de l'API mira |
+   | `MIRA_API_KEY` | *(vide)* | Envoyée en en-tête `Authorization: Bearer ...` sur chaque appel API (l'API mira ne vérifie pas encore d'authentification — prêt pour une future évolution) |
+   | `MIRA_MCP_CONFIG` | `config.json` | Chemin du fichier de configuration JSON |
+
+Le fichier `config.json` rend le serveur utilisable tel quel par n'importe quel hôte MCP
+(pas seulement Claude Code) : il suffit de lancer le même binaire avec le même fichier à
+côté, sans rien connaître du format d'enregistrement propre à un client particulier.
+
+### Enregistrement dans Claude Code
+
+**Option A — `.mcp.json` au niveau du projet** (fourni à la racine du repo, détecté
+automatiquement) :
+
+```json
+{
+  "mcpServers": {
+    "mira": {
+      "type": "stdio",
+      "command": "go",
+      "args": ["run", "./cmd/mira-mcp"],
+      "env": { "MIRA_API_URL": "http://localhost:8080" }
+    }
+  }
+}
+```
+
+**Option B — CLI `claude mcp add`** :
+
+```sh
+claude mcp add mira -- go run ./cmd/mira-mcp
+```
+
+### Enregistrement dans Claude Desktop
+
+Claude Desktop n'hérite pas du répertoire de travail du projet : utiliser un binaire
+compilé avec un chemin absolu, dans `claude_desktop_config.json` :
+
+```json
+{
+  "mcpServers": {
+    "mira": {
+      "command": "/chemin/absolu/vers/mira-mcp.exe",
+      "args": [],
+      "env": { "MIRA_API_URL": "http://localhost:8080" }
+    }
+  }
+}
+```
+
+### Exemples de prompts
+
+- « Retrouve ma note sur les channels Go et ajoute une note résumant ce qu'on vient de faire. »
+- « Quelles sont mes 5 dernières notes ? »
+- « Cherche mes notes qui parlent de pgvector. »
+- « Montre-moi le contenu complet de la note `<id>`. »
+
+---
+
 ## Enrichissement automatique
 
 Chaque `POST` ou `PATCH` sur une note :
@@ -166,6 +274,8 @@ Si le channel de jobs est plein (charge trop importante), le job est abandonné 
 - une **similarité vectorielle** (`pgvector`, index HNSW, distance cosinus) entre l'embedding de la requête et les embeddings des notes déjà enrichies.
 
 Une note apparaît si elle matche le texte, ou si elle est sémantiquement proche de la requête. Si le service d'embeddings (Ollama) est indisponible, la recherche se replie automatiquement sur le plein texte seul.
+
+Le paramètre optionnel `limit` (1–100, défaut 20) borne le nombre de résultats, ex. `GET /api/v1/search?q=go&limit=5`.
 
 ---
 
@@ -220,7 +330,10 @@ Tests unitaires uniquement (handlers HTTP avec un store en mémoire, CLI avec un
 
 ```
 mira/
-├── cmd/api/                # point d'entrée du serveur HTTP
+├── cmd/
+│   ├── api/                 # point d'entrée du serveur HTTP
+│   ├── mira/                 # point d'entrée de la CLI (client HTTP de l'API)
+│   └── mira-mcp/             # serveur MCP (stdio) : expose les notes à un agent IA
 ├── internal/
 │   ├── config/              # chargeur .env minimal
 │   ├── core/                # modèle métier (Note, inputs, validation, EnrichmentResult)
@@ -244,5 +357,5 @@ mira/
 ├── Dockerfile                  # build multi-stage de l'API
 ├── docker-compose.yml           # db (pgvector) + ollama + api
 ├── .env.example                  # variables disponibles
-└── main.go                        # CLI (client HTTP de l'API)
+└── .mcp.json                      # enregistrement du serveur MCP pour Claude Code
 ```

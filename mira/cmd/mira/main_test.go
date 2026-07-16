@@ -90,7 +90,7 @@ func newTestClient(t *testing.T, api *fakeAPI) *apiclient.Client {
 	t.Helper()
 	srv := httptest.NewServer(api.handler())
 	t.Cleanup(srv.Close)
-	return apiclient.New(srv.URL)
+	return apiclient.New(srv.URL, "")
 }
 
 func capture(args []string, client *apiclient.Client) (string, int) {
