@@ -2,6 +2,10 @@
 
 Dépôt de travail pour la formation Go (ESGI). Il regroupe le projet fil rouge **Mira** ainsi que les exercices réalisés en parallèle.
 
+
+[Vidéo de présentation du projet](https://youtu.be/1-CJCLDuaTk)
+A savoir que j'ai oublié de présenté la recherche vectorielle :/)
+
 ## Mira — présentation
 
 **Mira, c'est un carnet de notes qui comprend ce que vous écrivez.**
