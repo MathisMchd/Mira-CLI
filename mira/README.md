@@ -4,6 +4,9 @@ Application de prise de notes. Disponible en **CLI** et en **API REST**, adossé
 
 > La CLI ne stocke rien localement : elle passe systématiquement par l'API HTTP, seul moyen de déclencher l'enrichissement automatique de chaque note créée ou modifiée. **L'API doit donc être démarrée avant d'utiliser la CLI.**
 
+Note personnelle : pour avoir des catégorisation plus précise il faudrait utiliser des models d'IA plus puissants.
+
+
 ---
 
 ## Démarrage rapide
