@@ -23,19 +23,12 @@ Résultat : la recherche fonctionne même quand on ne se souvient pas des mots e
 
 Tout cela tourne en local, sans dépendre d'un service payant tiers ni envoyer les notes à un cloud externe : l'intelligence artificielle est auto-hébergée.
 
-### Ce qui le rend robuste
-
-L'ajout d'une note reste instantané, même si le traitement intelligent derrière prend quelques secondes — l'utilisateur n'attend jamais l'IA pour continuer à travailler. Et si le module d'IA venait à tomber en panne, l'application continue de fonctionner normalement : la recherche classique prend simplement le relais, sans interruption de service perceptible.
-
-### En résumé
-
-Mira transforme une prise de notes brute en base de connaissances organisée et interrogeable par le sens, tout en garantissant une expérience rapide et fiable — même quand la partie « intelligente » du système est sollicitée ou indisponible.
 
 ## Structure
 
 ```
 mira-project/
-├── mira/            # Projet principal (fil rouge) — module Go "mira"
+├── mira/            # Projet principal (fil rouge) — module Go "mira" contenant l'api, le mcp et cli
 ├── go-warmup/       # Exercices de prise en main de Go — module Go "go-warmup"
 └── tp-goroutines/   # TP sur les goroutines, channels et sync — module Go "tp-goroutines"
 ```
@@ -53,6 +46,7 @@ go run ./cmd/api
 go test ./...
 ```
 
+# Autre
 ## go-warmup/ — exercices de prise en main
 
 Petits exercices d'échauffement Go : types de base, tri de tags, lecture/écriture JSON, interface de stockage de notes en mémoire.

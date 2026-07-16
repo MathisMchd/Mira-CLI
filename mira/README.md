@@ -2,7 +2,7 @@
 
 Application de prise de notes. Disponible en **CLI** et en **API REST**, adossée à **PostgreSQL** (+ **pgvector**) et enrichie automatiquement en arrière-plan par deux modèles **Ollama** locaux : un modèle génératif pour tags/résumé/score, un modèle d'embedding pour la recherche vectorielle.
 
-> La CLI ne stocke plus rien localement : elle passe systématiquement par l'API HTTP, seul moyen de déclencher l'enrichissement automatique de chaque note créée ou modifiée. **L'API doit donc être démarrée avant d'utiliser la CLI.**
+> La CLI ne stocke rien localement : elle passe systématiquement par l'API HTTP, seul moyen de déclencher l'enrichissement automatique de chaque note créée ou modifiée. **L'API doit donc être démarrée avant d'utiliser la CLI.**
 
 ---
 
@@ -36,13 +36,13 @@ go build -o mira.exe ./cmd/mira
 
 ### Interface web
 
-Une interface web minimale (statique, sans dépendance ni étape de build) est servie directement par l'API sur **http://localhost:8080/app/** : création de note, liste paginée, recherche, suppression, avec suivi en direct du statut d'enrichissement.
+Une interface web minimale  est servie directement par l'API sur **http://localhost:8080/app/** : création de note, liste paginée, recherche, suppression, avec suivi en direct du statut d'enrichissement.
 
 ---
 
 ## CLI
 
-La CLI est un client HTTP de l'API (`internal/apiclient`). Aucune écriture locale.
+La CLI est un client HTTP de l'API (`internal/apiclient`).
 
 Base URL configurable via `MIRA_API_URL` (défaut `http://localhost:8080`).
 
@@ -193,7 +193,7 @@ pour le lancer :
    | Variable | Défaut | Rôle |
    |---|---|---|
    | `MIRA_API_URL` | `http://localhost:8080` | Base URL de l'API mira |
-   | `MIRA_API_KEY` | *(vide)* | Envoyée en en-tête `Authorization: Bearer ...` sur chaque appel API (l'API mira ne vérifie pas encore d'authentification — prêt pour une future évolution) |
+   | `MIRA_API_KEY` | *(vide)* | Envoyée en en-tête `Authorization: Bearer ...` sur chaque appel API (l'API mira ne vérifie pas encore d'authentification) |
    | `MIRA_MCP_CONFIG` | `config.json` | Chemin du fichier de configuration JSON |
 
 Le fichier `config.json` rend le serveur utilisable tel quel par n'importe quel hôte MCP
